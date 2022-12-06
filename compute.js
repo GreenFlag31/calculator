@@ -67,8 +67,8 @@ function CheckIfPossibleOperation(button) {
 
   if ((operandSymbols.includes(button) && minLengthForOperation) ||
   (button.textContent === '=' && minLengthForOperation)) {
-    // the value has to be stored in a variable to make further operations
     display.textContent = operate(button, +firstNumber, +lastNumber)
+    // the value has to be stored in a variable to make further operations
     return true
   }
 
