@@ -13,7 +13,7 @@ const symbolsToOperations = {
   '/': divide
 }
 
-const operandSymbols = ['+', '-', '*', '/']
+// const operandSymbols = ['+', '-', '*', '/']
 
 
 
@@ -58,16 +58,18 @@ function RemovingElements(button) {
 /**
  * 
  * @param {HTMLElement} button 
+ * @return {boolean}
  */
 function CheckIfPossibleOperation(button) {
   // debugger
   const splittedOperation = display.textContent.split(button)
-  const [firstNumber, lastNumber] = splittedOperation
+  const [firstOperand, lastOperand] = splittedOperation
   const minLengthForOperation = splittedOperation.length === 2
 
-  if ((operandSymbols.includes(button) && minLengthForOperation) ||
-  (button.textContent === '=' && minLengthForOperation)) {
-    display.textContent = operate(button, +firstNumber, +lastNumber)
+  if (!minLengthForOperation) return false
+
+  if (symbolsToOperations[button] || button.textContent === '=') {
+    display.textContent = operate(button, +firstOperand, +lastOperand)
     // the value has to be stored in a variable to make further operations
     return true
   }
