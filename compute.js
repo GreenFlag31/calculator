@@ -27,6 +27,7 @@ function operate(operation, n1, n2) {
 
 const display = document.querySelector('.current')
 const numberButtons = document.querySelectorAll('button')
+const allowedChar = '[0-9]|\s|=|\/|\*|-|\+'
 
 numberButtons.forEach(button => {
   button.addEventListener('click', () => {
