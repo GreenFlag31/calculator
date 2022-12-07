@@ -14,6 +14,9 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  /* display: flex;
+  justify-content: center;
+  align-items: center; */
   min-width: 320px;
   max-width: 400px;
   display: grid;
@@ -33,6 +36,49 @@ body {
 .calculator-grid button:hover {
   background-color: rgba(255, 255, 255, .9);
 }
+.calculator-grid.shake {
+  animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  /* transform: translate(-50%, -50%); */
+  /* transform: translate3d(0, 0, 0); */
+}
+
+@keyframes shake {
+  10%,
+  90% {
+    transform: translate3d(calc(-50% - 1px), -50%, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(calc(-50% + 2px), -50%, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(calc(-50% - 4px), -50%, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(calc(-50% + 4px), -50%, 0);
+  }
+}
+
+
+button.validate {
+  animation: validate 0.2s ease-out;
+}
+
+@keyframes validate {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .span-two {
   grid-column: span 2;
 }
@@ -61,3 +107,4 @@ body {
   border: none; */
   /* background-color: transparent; */
 }
+

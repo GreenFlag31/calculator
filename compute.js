@@ -13,10 +13,21 @@ const symbolsToOperations = {
   '÷': divide
 }
 
-// const operandSymbols = ['+', '-', '*', '÷']
+const translateExpression = {
+  'Enter': '=',
+  'Backspace': 'DEL',
+  'Delete': 'DEL',
+  'Escape': 'AC',
+  '/': '÷',
+}
 
-
-
+/**
+ * 
+ * @param {string} operation 
+ * @param {number} n1 
+ * @param {number} n2 
+ * @return {(n1: number, n2: number) => number}
+ */
 function operate(operation, n1, n2) {
 
   return symbolsToOperations[operation](n1, n2)
@@ -25,38 +36,98 @@ function operate(operation, n1, n2) {
 
 
 const display = document.querySelector('.current')
-const numberButtons = document.querySelectorAll('button')
-const allowedChar = '/\d|=|\/|\*|-|\+|Enter/g'
+const inputButtons = document.querySelectorAll('button')
+const calculator = document.querySelector('.calculator-grid')
+const allowedChar = /^\d|=|\/|\*|-|\+|\.|Enter|Backspace|Delete|Escape/
 let divisionByZeroError = false
 
-const expression = '1'
-allowedChar.test(expression)
 
-numberButtons.forEach(button => {
+
+
+/**
+ * Mouse inputs
+ */
+ inputButtons.forEach(button => {
   button.addEventListener('click', () => {
-    if (RemovingElements(button)) return
-
     const btnContent = button.textContent
 
-    // a computation is possible and '=' pressed, just display results
-    // do not display further operator if a division by 0 occured && operations chained
-    if (CheckIfPossibleOperation(btnContent) && btnContent === '=' || divisionByZeroError) return
-
-    display.insertAdjacentText('beforeend', btnContent)
+    AddPressedBtnAnimation(button)
+    ProcessToResult(btnContent)
   })
 })
+
+
+/**
+ * Keyboard inputs
+ */
+document.addEventListener("keyup", (e) => {
+  let expression = e.key
+  // if user reloads page, do not add a shake animation
+  if (expression === 'F5') return
+
+  // debugger
+  
+  if (allowedChar.test(expression) === false) {
+    calculator.classList.add('shake')
+    setTimeout(() => calculator.classList.remove('shake'), 1000)
+    return
+  }
+  
+  if (translateExpression[expression]) {
+    expression = translateExpression[expression]
+  } 
+  FindCorrespondingButton(expression)
+  ProcessToResult(expression)
+})
+
+
+/**
+ * @param {HTMLButtonElement} input 
+ */
+function AddPressedBtnAnimation(input) {
+  input.classList.add('validate')
+  setTimeout(() => input.classList.remove('validate'), 300)
+}
+
+/**
+ * @param {string} expression 
+ */
+function FindCorrespondingButton(expression) {
+  for (btn of Array.from(inputButtons)) {
+    if (btn.textContent === expression) {
+      AddPressedBtnAnimation(btn)
+      break
+    }
+  }
+}
+
+
+/**
+ * calls functions and event. display the result on calculator
+ * @param {HTMLElement} value 
+ */
+function ProcessToResult(value) {
+  if (RemovingElements(value)) return
+
+  // a computation is possible and '=' pressed, just display results
+  // do not display further operator if a division by 0 occured && operations chained
+  if (CheckIfPossibleOperation(value) && value === '=' || divisionByZeroError) return
+
+  display.insertAdjacentText('beforeend', value)
+}
+
   
 /**
  * @param {HTMLElement} button
  * @return {boolean}
  */
-function RemovingElements(button) {
+function RemovingElements(value) {
   ResetContent()
 
-  if (button.textContent === 'DEL') {
+  if (value === 'DEL') {
     display.textContent = display.textContent.substring(0, display.textContent.length - 1)
     return true
-  } else if (button.textContent === 'AC') {
+  } else if (value === 'AC') {
     display.textContent = ''
     return true
   }
@@ -65,7 +136,7 @@ function RemovingElements(button) {
 }
 
 /**
- * Reset back to normal
+ * Reset back to normal appearance. Last computation introduced an error
  */
 function ResetContent() {
   if (divisionByZeroError) {
@@ -79,6 +150,7 @@ function ResetContent() {
 /**
  * @param {HTMLElement} button 
  * @return {boolean}
+ * disable buttons if actions were called !
  */
 function CheckIfPossibleOperation(button) {
   // debugger
@@ -92,10 +164,9 @@ function CheckIfPossibleOperation(button) {
   const minLengthForOperation = splittedOperation.length === 2
   if (!minLengthForOperation) return false
 
-  result = operate(hashmapOperators['operator'], +firstOperand, +lastOperand)
 
+  result = operate(hashmapOperators['operator'], +firstOperand, +lastOperand)
   if (result === Infinity) {
-    // debugger
     display.textContent = 'Division by zero error'
     display.style.color = 'red'
     divisionByZeroError = true
@@ -105,7 +176,6 @@ function CheckIfPossibleOperation(button) {
 
   display.textContent = result
   if (symbolsToOperations[button]) hashmapOperators['operator'] = button
-
 
   return true
 }
