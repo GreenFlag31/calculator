@@ -133,6 +133,7 @@ function ProcessToResult(value) {
   if (CheckIfPossibleOperation(value) && value === '=' || divisionByZeroError) {
     DisableEqualBtn(true)
     DisableActionsButtons(true)
+    hashmapOperators = {}
     return
   }
   
