@@ -22,7 +22,6 @@ const translateExpression = {
 }
 
 /**
- * 
  * @param {string} operation 
  * @param {number} n1 
  * @param {number} n2 
@@ -39,14 +38,13 @@ const display = document.querySelector('.current')
 const inputButtons = document.querySelectorAll('button')
 const calculator = document.querySelector('.calculator-grid')
 const allowedChar = /^\d|=|\/|\*|-|\+|\.|Enter|Backspace|Delete|Escape/
+const onlyDigits = /\d/
 let divisionByZeroError = false
 
 
 
 
-/**
- * Mouse inputs
- */
+/** Mouse inputs */
  inputButtons.forEach(button => {
   button.addEventListener('click', () => {
     const btnContent = button.textContent
@@ -57,29 +55,32 @@ let divisionByZeroError = false
 })
 
 
-/**
- * Keyboard inputs
- */
+/** Keyboard inputs */
 document.addEventListener("keyup", (e) => {
   let expression = e.key
   // if user reloads page, do not add a shake animation
   if (expression === 'F5') return
 
   // debugger
+  const correspondingbtn = FindCorrespondingButton(expression)
   
-  if (allowedChar.test(expression) === false) {
-    calculator.classList.add('shake')
-    setTimeout(() => calculator.classList.remove('shake'), 1000)
+  if (allowedChar.test(expression) === false ||
+  correspondingbtn.hasAttribute('disabled')) {
+    AddShakeAnimation()
     return
   }
   
   if (translateExpression[expression]) {
     expression = translateExpression[expression]
   } 
-  FindCorrespondingButton(expression)
   ProcessToResult(expression)
 })
 
+
+function AddShakeAnimation() {
+  calculator.classList.add('shake')
+  setTimeout(() => calculator.classList.remove('shake'), 1000)
+}
 
 /**
  * @param {HTMLButtonElement} input 
@@ -96,7 +97,7 @@ function FindCorrespondingButton(expression) {
   for (btn of Array.from(inputButtons)) {
     if (btn.textContent === expression) {
       AddPressedBtnAnimation(btn)
-      break
+      return btn
     }
   }
 }
@@ -108,11 +109,14 @@ function FindCorrespondingButton(expression) {
  */
 function ProcessToResult(value) {
   if (RemovingElements(value)) return
-
   // a computation is possible and '=' pressed, just display results
   // do not display further operator if a division by 0 occured && operations chained
   if (CheckIfPossibleOperation(value) && value === '=' || divisionByZeroError) return
 
+  // debugger
+  if (onlyDigits.test(value)) {
+    DisableActionsButtons(false)
+  }
   display.insertAdjacentText('beforeend', value)
 }
 
@@ -147,6 +151,26 @@ function ResetContent() {
   divisionByZeroError = false
 }
 
+
+
+
+/**
+ * @param {boolean} disable 
+ */
+function DisableActionsButtons(disable) {
+  const actionsButtons = document.querySelectorAll('button.action')
+  actionsButtons.forEach(actionsButton => {
+    if (disable) {
+      actionsButton.setAttribute('disabled', '')
+      actionsButton.classList.remove('enabled')
+    } else {
+      actionsButton.removeAttribute('disabled')
+      actionsButton.classList.add('enabled')
+    }
+  })
+}
+DisableActionsButtons(true)
+
 /**
  * @param {HTMLElement} button 
  * @return {boolean}
@@ -158,12 +182,12 @@ function CheckIfPossibleOperation(button) {
   let result = ''
 
   PopulatehashmapOperators(button)
+  DisableActionsButtons(true)
 
   const splittedOperation = display.textContent.split(hashmapOperators['operator'])
   const [firstOperand, lastOperand] = splittedOperation
   const minLengthForOperation = splittedOperation.length === 2
   if (!minLengthForOperation) return false
-
 
   result = operate(hashmapOperators['operator'], +firstOperand, +lastOperand)
   if (result === Infinity) {
@@ -176,7 +200,6 @@ function CheckIfPossibleOperation(button) {
 
   display.textContent = result
   if (symbolsToOperations[button]) hashmapOperators['operator'] = button
-
   return true
 }
 
