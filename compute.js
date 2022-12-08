@@ -86,6 +86,99 @@ document.addEventListener("keyup", (e) => {
 })
 
 
+/**
+ * calls functions and event. display the result on calculator
+ * @param {HTMLElement} value 
+ */
+function ProcessToResult(value) {
+  if (RemovingElements(value)) return
+
+  if (resultAsked && onlyDigits.test(value)) {
+    display.textContent = ''
+  }
+  // a computation is possible and '=' pressed, just display results
+  // do not display further operator if a division by 0 occured && operations chained
+  if (CheckIfPossibleOperation(value) && value === '=' || divisionByZeroError) {
+    DisableEqualBtn(true)
+    DisableActionsButtons(true)
+    hashmapOperators = {}
+    return
+  }
+  
+  // debugger
+  RegexTestOnlyDigits(value)
+
+  display.insertAdjacentText('beforeend', value)
+  CheckEqualsBtn()
+}
+
+
+/**
+ * @param {HTMLElement} button 
+ * @return {boolean}
+ */
+function CheckIfPossibleOperation(button) {
+  if (!symbolsToOperations[button] && button !== '=') return false
+  let result = ''
+
+  PopulatehashmapOperators(button)
+  DisableActionsButtons(true)
+
+  if (button === '=') resultAsked = true
+  else resultAsked = false
+  if (!minLengthForOperation()) return false
+
+  const [firstOperand, lastOperand] = SplitCurrentOperation()
+  result = operate(hashmapOperators['operator'], +firstOperand, +lastOperand)
+
+  if (result === Infinity) {
+    display.textContent = 'Division by zero error'
+    display.style.color = 'red'
+    divisionByZeroError = true
+    hashmapOperators = {}
+    return true
+  }
+
+  display.textContent = result
+  if (symbolsToOperations[button]) hashmapOperators['operator'] = button
+  return true
+}
+
+
+/** @return {boolean} */
+function minLengthForOperation() {
+  let splittedOperation = SplitCurrentOperation()
+  // Weirdly, splitting a number and an action ('5+') with '+' separator creates an array of length 2 ('5', '') :
+  splittedOperation = splittedOperation.filter(element => element !== '')
+  const minLengthForOperation = splittedOperation.length === 2
+  if (!minLengthForOperation) {
+    return false
+  }
+
+  return true
+}
+
+
+/** @return {Array} */
+function SplitCurrentOperation() {
+  const splittedOperation = display.textContent.split(hashmapOperators['operator'])
+
+  return splittedOperation
+}
+
+
+/**
+ * This function stores the operator needed for computation.
+ * @param {HTMLElement} button 
+ * @return {boolean}
+ */
+function PopulatehashmapOperators(button) {
+  if (hashmapOperators['operator']) return
+
+  hashmapOperators['operator'] = button
+}
+
+
 function DisableEqualBtn(disable) {
   if (disable) {
     exe.setAttribute('disabled', '')
@@ -116,34 +209,6 @@ function FindCorrespondingButton(expression) {
     }
   }
 }
-
-
-/**
- * calls functions and event. display the result on calculator
- * @param {HTMLElement} value 
- */
-function ProcessToResult(value) {
-  if (RemovingElements(value)) return
-
-  if (resultAsked && onlyDigits.test(value)) {
-    display.textContent = ''
-  }
-  // a computation is possible and '=' pressed, just display results
-  // do not display further operator if a division by 0 occured && operations chained
-  if (CheckIfPossibleOperation(value) && value === '=' || divisionByZeroError) {
-    DisableEqualBtn(true)
-    DisableActionsButtons(true)
-    hashmapOperators = {}
-    return
-  }
-  
-  // debugger
-  RegexTestOnlyDigits(value)
-
-  display.insertAdjacentText('beforeend', value)
-  CheckEqualsBtn()
-}
-
 
 
 /**
@@ -178,7 +243,6 @@ function RemovingElements(value) {
 }
 
 
-
 function RegexTestOnlyDigits(value) {
   if (onlyDigits.test(value)) {
     DisableActionsButtons(false)
@@ -186,6 +250,7 @@ function RegexTestOnlyDigits(value) {
     DisableActionsButtons(true)
   }
 }
+
 function CheckEqualsBtn() {
   if (minLengthForOperation() === false) {
     DisableEqualBtn(true)
@@ -208,8 +273,6 @@ function ResetContent() {
 }
 
 
-
-
 /** @param {boolean} disable */
 function DisableActionsButtons(disable) {
   const actionsButtons = document.querySelectorAll('button.action')
@@ -224,67 +287,3 @@ function DisableActionsButtons(disable) {
   })
 }
 
-
-/**
- * @param {HTMLElement} button 
- * @return {boolean}
- */
-function CheckIfPossibleOperation(button) {
-  if (!symbolsToOperations[button] && button !== '=') return false
-  let result = ''
-
-  PopulatehashmapOperators(button)
-  DisableActionsButtons(true)
-
-  if (button === '=') resultAsked = true
-  else resultAsked = false
-  if (!minLengthForOperation()) return false
-  const [firstOperand, lastOperand] = SplitCurrentOperation()
-
-  result = operate(hashmapOperators['operator'], +firstOperand, +lastOperand)
-  if (result === Infinity) {
-    display.textContent = 'Division by zero error'
-    display.style.color = 'red'
-    divisionByZeroError = true
-    hashmapOperators = {}
-    return true
-  }
-
-  display.textContent = result
-  if (symbolsToOperations[button]) hashmapOperators['operator'] = button
-  return true
-}
-
-
-/** @return {boolean} */
-function minLengthForOperation() {
-  let splittedOperation = SplitCurrentOperation()
-  // Weirdly, a number and an action ('5+') will create a '', hence following correction :
-  splittedOperation = splittedOperation.filter(element => element !== '')
-  const minLengthForOperation = splittedOperation.length === 2
-  if (!minLengthForOperation) {
-    return false
-  }
-
-  return true
-}
-
-
-/** @return {Array} */
-function SplitCurrentOperation() {
-  const splittedOperation = display.textContent.split(hashmapOperators['operator'])
-
-  return splittedOperation
-}
-
-
-/**
- * This function stores the operator needed for computation.
- * @param {HTMLElement} button 
- * @return {boolean}
- */
-function PopulatehashmapOperators(button) {
-  if (hashmapOperators['operator']) return
-
-  hashmapOperators['operator'] = button
-}
