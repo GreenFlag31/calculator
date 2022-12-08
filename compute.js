@@ -37,9 +37,14 @@ function operate(operation, n1, n2) {
 const display = document.querySelector('.current')
 const inputButtons = document.querySelectorAll('button')
 const calculator = document.querySelector('.calculator-grid')
-const allowedChar = /^\d|=|\/|\*|-|\+|\.|Enter|Backspace|Delete|Escape/
+const exe = document.querySelector(".execute")
+const allowedChar = /^\d|=|÷|\*|-|\+|\.|DEL|AC/
 const onlyDigits = /\d/
 let divisionByZeroError = false
+let resultAsked = false
+let hashmapOperators = {}
+DisableEqualBtn(true)
+DisableActionsButtons(true)
 
 
 
@@ -47,9 +52,14 @@ let divisionByZeroError = false
 /** Mouse inputs */
  inputButtons.forEach(button => {
   button.addEventListener('click', () => {
+    
+    AddPressedBtnAnimation(button)
+    if (button.hasAttribute('disabled')) {
+      AddShakeAnimation()
+      return
+    }
     const btnContent = button.textContent
 
-    AddPressedBtnAnimation(button)
     ProcessToResult(btnContent)
   })
 })
@@ -58,10 +68,12 @@ let divisionByZeroError = false
 /** Keyboard inputs */
 document.addEventListener("keyup", (e) => {
   let expression = e.key
-  // if user reloads page, do not add a shake animation
   if (expression === 'F5') return
 
   // debugger
+  if (translateExpression[expression]) {
+    expression = translateExpression[expression]
+  } 
   const correspondingbtn = FindCorrespondingButton(expression)
   
   if (allowedChar.test(expression) === false ||
@@ -70,29 +82,32 @@ document.addEventListener("keyup", (e) => {
     return
   }
   
-  if (translateExpression[expression]) {
-    expression = translateExpression[expression]
-  } 
   ProcessToResult(expression)
 })
 
+
+function DisableEqualBtn(disable) {
+  if (disable) {
+    exe.setAttribute('disabled', '')
+    exe.classList.remove('enabled')
+  } else {
+    exe.removeAttribute('disabled')
+    exe.classList.add('enabled')
+  }
+}
 
 function AddShakeAnimation() {
   calculator.classList.add('shake')
   setTimeout(() => calculator.classList.remove('shake'), 1000)
 }
 
-/**
- * @param {HTMLButtonElement} input 
- */
+/** @param {HTMLButtonElement} input */
 function AddPressedBtnAnimation(input) {
   input.classList.add('validate')
   setTimeout(() => input.classList.remove('validate'), 300)
 }
 
-/**
- * @param {string} expression 
- */
+/** @param {string} expression */
 function FindCorrespondingButton(expression) {
   for (btn of Array.from(inputButtons)) {
     if (btn.textContent === expression) {
@@ -109,35 +124,75 @@ function FindCorrespondingButton(expression) {
  */
 function ProcessToResult(value) {
   if (RemovingElements(value)) return
+
+  if (resultAsked && onlyDigits.test(value)) {
+    display.textContent = ''
+  }
   // a computation is possible and '=' pressed, just display results
   // do not display further operator if a division by 0 occured && operations chained
-  if (CheckIfPossibleOperation(value) && value === '=' || divisionByZeroError) return
-
-  // debugger
-  if (onlyDigits.test(value)) {
-    DisableActionsButtons(false)
+  if (CheckIfPossibleOperation(value) && value === '=' || divisionByZeroError) {
+    DisableEqualBtn(true)
+    DisableActionsButtons(true)
+    return
   }
+  
+  // debugger
+  RegexTestOnlyDigits(value)
+
   display.insertAdjacentText('beforeend', value)
+  CheckEqualsBtn()
 }
 
-  
+
+
 /**
  * @param {HTMLElement} button
  * @return {boolean}
  */
 function RemovingElements(value) {
   ResetContent()
-
+  
   if (value === 'DEL') {
     display.textContent = display.textContent.substring(0, display.textContent.length - 1)
+    const displayedContent = display.textContent
+
+    if (displayedContent.length === 0) {
+      DisableActionsButtons(true)
+      DisableEqualBtn(true)
+    } else {
+      RegexTestOnlyDigits(displayedContent[displayedContent.length - 1])
+      CheckEqualsBtn()
+    }
+    resultAsked = false
     return true
   } else if (value === 'AC') {
     display.textContent = ''
+    DisableEqualBtn(true)
+    DisableActionsButtons(true)
+    resultAsked = false
     return true
   }
 
   return false
 }
+
+
+
+function RegexTestOnlyDigits(value) {
+  if (onlyDigits.test(value)) {
+    DisableActionsButtons(false)
+  } else {
+    DisableActionsButtons(true)
+  }
+}
+function CheckEqualsBtn() {
+  if (minLengthForOperation() === false) {
+    DisableEqualBtn(true)
+  } else {
+    DisableEqualBtn(false)
+  } 
+}
+
 
 /**
  * Reset back to normal appearance. Last computation introduced an error
@@ -154,9 +209,7 @@ function ResetContent() {
 
 
 
-/**
- * @param {boolean} disable 
- */
+/** @param {boolean} disable */
 function DisableActionsButtons(disable) {
   const actionsButtons = document.querySelectorAll('button.action')
   actionsButtons.forEach(actionsButton => {
@@ -169,25 +222,23 @@ function DisableActionsButtons(disable) {
     }
   })
 }
-DisableActionsButtons(true)
+
 
 /**
  * @param {HTMLElement} button 
  * @return {boolean}
- * disable buttons if actions were called !
  */
 function CheckIfPossibleOperation(button) {
-  // debugger
   if (!symbolsToOperations[button] && button !== '=') return false
   let result = ''
 
   PopulatehashmapOperators(button)
   DisableActionsButtons(true)
 
-  const splittedOperation = display.textContent.split(hashmapOperators['operator'])
-  const [firstOperand, lastOperand] = splittedOperation
-  const minLengthForOperation = splittedOperation.length === 2
-  if (!minLengthForOperation) return false
+  if (button === '=') resultAsked = true
+  else resultAsked = false
+  if (!minLengthForOperation()) return false
+  const [firstOperand, lastOperand] = SplitCurrentOperation()
 
   result = operate(hashmapOperators['operator'], +firstOperand, +lastOperand)
   if (result === Infinity) {
@@ -204,7 +255,28 @@ function CheckIfPossibleOperation(button) {
 }
 
 
-let hashmapOperators = {}
+/** @return {boolean} */
+function minLengthForOperation() {
+  let splittedOperation = SplitCurrentOperation()
+  // Weirdly, a number and an action ('5+') will create a '', hence following correction :
+  splittedOperation = splittedOperation.filter(element => element !== '')
+  const minLengthForOperation = splittedOperation.length === 2
+  if (!minLengthForOperation) {
+    return false
+  }
+
+  return true
+}
+
+
+/** @return {Array} */
+function SplitCurrentOperation() {
+  const splittedOperation = display.textContent.split(hashmapOperators['operator'])
+
+  return splittedOperation
+}
+
+
 /**
  * This function stores the operator needed for computation.
  * @param {HTMLElement} button 
