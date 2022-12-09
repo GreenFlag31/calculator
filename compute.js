@@ -108,7 +108,9 @@ function ProcessToResult(value) {
   // debugger
   RegexTestOnlyDigits(value)
 
+
   display.insertAdjacentText('beforeend', value)
+  AnimateResultDisplay(display)
   CheckEqualsBtn()
 }
 
@@ -134,12 +136,14 @@ function CheckIfPossibleOperation(button) {
   if (result === Infinity) {
     display.textContent = 'Division by zero error'
     display.style.color = 'red'
+    AnimateResultDisplay(display)
     divisionByZeroError = true
     hashmapOperators = {}
     return true
   }
 
   display.textContent = result
+  AnimateResultDisplay(display)
   if (symbolsToOperations[button]) hashmapOperators['operator'] = button
   return true
 }
@@ -257,6 +261,21 @@ function CheckEqualsBtn() {
   } else {
     DisableEqualBtn(false)
   } 
+}
+
+
+/**
+ * @param {HTMLDivElement} element 
+ */
+function AnimateResultDisplay(element) {
+  const keyframes = [{ opacity: 0 }, { opacity: 1 }]
+  const options = {  
+    duration: 600,
+    easing: 'ease-out',
+    fill: 'forwards'
+  }
+
+  element.animate(keyframes, options)
 }
 
 
