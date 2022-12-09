@@ -34,6 +34,9 @@ function operate(operation, n1, n2) {
 }
 
 
+// TODO : handle '.' /!\
+
+
 const display = document.querySelector('.current')
 const inputButtons = document.querySelectorAll('button')
 const calculator = document.querySelector('.calculator-grid')
@@ -50,7 +53,7 @@ DisableActionsButtons(true)
 
 
 /** Mouse inputs */
- inputButtons.forEach(button => {
+inputButtons.forEach(button => {
   button.addEventListener('click', () => {
     
     AddPressedBtnAnimation(button)
@@ -70,7 +73,6 @@ document.addEventListener("keyup", (e) => {
   let expression = e.key
   if (expression === 'F5') return
 
-  // debugger
   if (translateExpression[expression]) {
     expression = translateExpression[expression]
   } 
@@ -95,12 +97,13 @@ function ProcessToResult(value) {
 
   if (resultAsked && onlyDigits.test(value)) {
     display.textContent = ''
+    resultAsked = false
   }
   // a computation is possible and '=' pressed, just display results
   // do not display further operator if a division by 0 occured && operations chained
   if (CheckIfPossibleOperation(value) && value === '=' || divisionByZeroError) {
     DisableEqualBtn(true)
-    DisableActionsButtons(true)
+    CheckLastDisplayedValue()
     hashmapOperators = {}
     return
   }
@@ -108,9 +111,8 @@ function ProcessToResult(value) {
   // debugger
   RegexTestOnlyDigits(value)
 
-
   display.insertAdjacentText('beforeend', value)
-  AnimateResultDisplay(display)
+  AnimateResultDisplay(display, 600)
   CheckEqualsBtn()
 }
 
@@ -133,20 +135,16 @@ function CheckIfPossibleOperation(button) {
   const [firstOperand, lastOperand] = SplitCurrentOperation()
   result = operate(hashmapOperators['operator'], +firstOperand, +lastOperand)
 
-  if (result === Infinity) {
-    display.textContent = 'Division by zero error'
-    display.style.color = 'red'
-    AnimateResultDisplay(display)
-    divisionByZeroError = true
-    hashmapOperators = {}
+  if (CheckZeroDivision(result)) {
     return true
   }
 
-  display.textContent = result
-  AnimateResultDisplay(display)
+  display.textContent = RoundResult(result)
+  AnimateResultDisplay(display, 400)
   if (symbolsToOperations[button]) hashmapOperators['operator'] = button
   return true
 }
+
 
 
 /** @return {boolean} */
@@ -225,20 +223,14 @@ function RemovingElements(value) {
   if (value === 'DEL') {
     display.textContent = display.textContent.substring(0, display.textContent.length - 1)
     const displayedContent = display.textContent
+    RemoveSingleElement(displayedContent)
 
-    if (displayedContent.length === 0) {
-      DisableActionsButtons(true)
-      DisableEqualBtn(true)
-    } else {
-      RegexTestOnlyDigits(displayedContent[displayedContent.length - 1])
-      CheckEqualsBtn()
-    }
-    resultAsked = false
     return true
   } else if (value === 'AC') {
     display.textContent = ''
     DisableEqualBtn(true)
     DisableActionsButtons(true)
+    hashmapOperators = {}
     resultAsked = false
     return true
   }
@@ -247,6 +239,26 @@ function RemovingElements(value) {
 }
 
 
+/** @param {HTMLDivElement} displayedContent */
+function RemoveSingleElement(displayedContent) {
+  if (displayedContent.length === 0) {
+    DisableActionsButtons(true)
+    DisableEqualBtn(true)
+  } else {
+    RegexTestOnlyDigits(displayedContent[displayedContent.length - 1])
+    CheckEqualsBtn()
+  }
+
+  if (resultAsked)  display.textContent = ''
+  resultAsked = false
+
+  if (display.textContent.indexOf(symbolsToOperations['operator']) === -1) {
+    hashmapOperators = {}
+  }
+}
+
+
+/** @param {number} value */
 function RegexTestOnlyDigits(value) {
   if (onlyDigits.test(value)) {
     DisableActionsButtons(false)
@@ -254,6 +266,13 @@ function RegexTestOnlyDigits(value) {
     DisableActionsButtons(true)
   }
 }
+
+
+function CheckLastDisplayedValue() {
+  const lastDisplayedValue = display.textContent[display.textContent.length - 1]
+  RegexTestOnlyDigits(lastDisplayedValue)
+}
+
 
 function CheckEqualsBtn() {
   if (minLengthForOperation() === false) {
@@ -265,12 +284,30 @@ function CheckEqualsBtn() {
 
 
 /**
+ * @param {number} result 
+ * @return {boolean}
+ */
+function CheckZeroDivision(result) {
+  if (result === Infinity) {
+    display.textContent = 'Division by zero error'
+    display.style.color = 'red'
+    AnimateResultDisplay(display, 300)
+    divisionByZeroError = true
+    hashmapOperators = {}
+    return true
+  }
+
+  return false
+}
+
+
+/**
  * @param {HTMLDivElement} element 
  */
-function AnimateResultDisplay(element) {
+function AnimateResultDisplay(element, duration) {
   const keyframes = [{ opacity: 0 }, { opacity: 1 }]
   const options = {  
-    duration: 600,
+    duration,
     easing: 'ease-out',
     fill: 'forwards'
   }
@@ -291,6 +328,13 @@ function ResetContent() {
   divisionByZeroError = false
 }
 
+/**
+ * @param {number} result 
+ * @return {number}
+ */
+function RoundResult(result) {
+  return Math.round(result * 100) / 100
+}
 
 /** @param {boolean} disable */
 function DisableActionsButtons(disable) {
