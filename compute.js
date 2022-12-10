@@ -53,6 +53,7 @@ DisableDotSeparator(true)
 
 /** Mouse inputs */
 inputButtons.forEach(button => {
+  // Disabled elements don't fire mouse events :/
   button.addEventListener('click', () => {
     
     AddPressedBtnAnimation(button)
@@ -289,7 +290,7 @@ function CheckDotSeparator(value = '') {
   const completeOperation = SplitCompleteOperation(wholeExpression)
 
   const checkOnLastOperand = completeOperation.at(-1)
-  if (checkOnLastOperand.indexOf('.') !== -1) {
+  if (checkOnLastOperand?.indexOf('.') !== -1) {
     DisableDotSeparator(true)
   } else {
     DisableDotSeparator(false)
