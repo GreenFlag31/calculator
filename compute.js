@@ -34,13 +34,12 @@ function operate(operation, n1, n2) {
 }
 
 
-// TODO : handle '.' /!\
-
 
 const display = document.querySelector('.current')
 const inputButtons = document.querySelectorAll('button')
 const calculator = document.querySelector('.calculator-grid')
 const exe = document.querySelector(".execute")
+const separator = document.querySelector(".separator")
 const allowedChar = /^\d|=|÷|\*|-|\+|\.|DEL|AC/
 const onlyDigits = /\d/
 let divisionByZeroError = false
@@ -48,7 +47,7 @@ let resultAsked = false
 let hashmapOperators = {}
 DisableEqualBtn(true)
 DisableActionsButtons(true)
-
+DisableDotSeparator(true)
 
 
 
@@ -95,8 +94,9 @@ document.addEventListener("keyup", (e) => {
 function ProcessToResult(value) {
   if (RemovingElements(value)) return
 
-  if (resultAsked && onlyDigits.test(value)) {
+  if (resultAsked && onlyDigits.test(value) && CheckDotSeparator()) {
     display.textContent = ''
+    DisableDotSeparator(true)
     resultAsked = false
   }
   // a computation is possible and '=' pressed, just display results
@@ -108,8 +108,7 @@ function ProcessToResult(value) {
     return
   }
   
-  // debugger
-  RegexTestOnlyDigits(value)
+  CheckActionsButtons(value)
 
   display.insertAdjacentText('beforeend', value)
   AnimateResultDisplay(display, 600)
@@ -118,17 +117,18 @@ function ProcessToResult(value) {
 
 
 /**
- * @param {HTMLElement} button 
+ * @param {string} value 
  * @return {boolean}
  */
-function CheckIfPossibleOperation(button) {
-  if (!symbolsToOperations[button] && button !== '=') return false
+function CheckIfPossibleOperation(value) {
+  if (!symbolsToOperations[value] && value !== '=') return false
   let result = ''
 
-  PopulatehashmapOperators(button)
+  PopulatehashmapOperators(value)
   DisableActionsButtons(true)
+  DisableDotSeparator(true)
 
-  if (button === '=') resultAsked = true
+  if (value === '=') resultAsked = true
   else resultAsked = false
   if (!minLengthForOperation()) return false
 
@@ -140,8 +140,9 @@ function CheckIfPossibleOperation(button) {
   }
 
   display.textContent = RoundResult(result)
-  AnimateResultDisplay(display, 400)
-  if (symbolsToOperations[button]) hashmapOperators['operator'] = button
+  display.classList.add("going-up")
+  CheckDotSeparator()
+  if (symbolsToOperations[value]) hashmapOperators['operator'] = value
   return true
 }
 
@@ -150,7 +151,7 @@ function CheckIfPossibleOperation(button) {
 /** @return {boolean} */
 function minLengthForOperation() {
   let splittedOperation = SplitCurrentOperation()
-  // Weirdly, splitting a number and an action ('5+') with '+' separator creates an array of length 2 ('5', '') :
+  // Weirdly, splitting an expression ('5+') with '+' separator creates an array of length 2 ('5', '') :
   splittedOperation = splittedOperation.filter(element => element !== '')
   const minLengthForOperation = splittedOperation.length === 2
   if (!minLengthForOperation) {
@@ -180,7 +181,7 @@ function PopulatehashmapOperators(button) {
   hashmapOperators['operator'] = button
 }
 
-
+/** @param {boolean} disable */
 function DisableEqualBtn(disable) {
   if (disable) {
     exe.setAttribute('disabled', '')
@@ -214,53 +215,64 @@ function FindCorrespondingButton(expression) {
 
 
 /**
- * @param {HTMLElement} button
+ * @param {string} button
  * @return {boolean}
  */
 function RemovingElements(value) {
   ResetContent()
+  display.classList.remove('going-up')
+
   
   if (value === 'DEL') {
     display.textContent = display.textContent.substring(0, display.textContent.length - 1)
+    if (resultAsked) DisableDotSeparator(true)
+    else CheckDotSeparator()
+
     const displayedContent = display.textContent
     RemoveSingleElement(displayedContent)
-
     return true
+
   } else if (value === 'AC') {
     display.textContent = ''
     DisableEqualBtn(true)
     DisableActionsButtons(true)
+    DisableDotSeparator(true)
     hashmapOperators = {}
     resultAsked = false
     return true
   }
 
+  CheckDotSeparator(value)
   return false
 }
 
 
-/** @param {HTMLDivElement} displayedContent */
+/** @param {string} displayedContent */
 function RemoveSingleElement(displayedContent) {
+  if (resultAsked) {
+    display.textContent = ''
+    displayedContent = ''
+    resultAsked = false
+  }  
+
   if (displayedContent.length === 0) {
     DisableActionsButtons(true)
     DisableEqualBtn(true)
+    // DisableDotSeparator(true)
   } else {
-    RegexTestOnlyDigits(displayedContent[displayedContent.length - 1])
+    CheckActionsButtons(displayedContent[displayedContent.length - 1])
     CheckEqualsBtn()
   }
 
-  if (resultAsked)  display.textContent = ''
-  resultAsked = false
-
-  if (display.textContent.indexOf(symbolsToOperations['operator']) === -1) {
+  if (display.textContent.indexOf(hashmapOperators['operator']) === -1) {
     hashmapOperators = {}
   }
 }
 
 
-/** @param {number} value */
-function RegexTestOnlyDigits(value) {
-  if (onlyDigits.test(value)) {
+/** @param {string} value */
+function CheckActionsButtons(value) {
+  if (RegexTestOnlyDigits(value)) {
     DisableActionsButtons(false)
   } else {
     DisableActionsButtons(true)
@@ -268,9 +280,51 @@ function RegexTestOnlyDigits(value) {
 }
 
 
+/**
+ * Solely one check, if last operand in {Array} contains a '.', disable button.
+ * @param {?string} value 
+ */
+function CheckDotSeparator(value = '') {
+  const wholeExpression = display.textContent + value
+  const completeOperation = SplitCompleteOperation(wholeExpression)
+
+  const checkOnLastOperand = completeOperation.at(-1)
+  if (checkOnLastOperand.indexOf('.') !== -1) {
+    DisableDotSeparator(true)
+  } else {
+    DisableDotSeparator(false)
+  }
+}
+
+
+/**
+ * This function returns operand(s), if operands > 1 an operator has been used.
+ * @param {string} wholeExpression 
+ * @return {Array}
+ */
+function SplitCompleteOperation(wholeExpression) {
+  let splittedOperation = wholeExpression.split(hashmapOperators['operator'])
+  splittedOperation = splittedOperation.filter(element => element !== '')
+
+  return splittedOperation
+}
+ 
+/**
+ * @param {string} value 
+ * @return {boolean}
+ */
+function RegexTestOnlyDigits(value) {
+  if (onlyDigits.test(value)) {
+    return true
+  }
+
+  return false
+}
+
+
 function CheckLastDisplayedValue() {
   const lastDisplayedValue = display.textContent[display.textContent.length - 1]
-  RegexTestOnlyDigits(lastDisplayedValue)
+  CheckActionsButtons(lastDisplayedValue)
 }
 
 
@@ -350,3 +404,13 @@ function DisableActionsButtons(disable) {
   })
 }
 
+/** @param {boolean} disable */
+function DisableDotSeparator(disable) {
+  if (disable) {
+    separator.setAttribute('disabled', '')
+    separator.classList.remove('enabled')
+  } else {
+    separator.removeAttribute('disabled')
+    separator.classList.add('enabled')
+  }
+}

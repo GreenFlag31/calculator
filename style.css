@@ -114,6 +114,7 @@ button.validate {
   padding: 10px;
   word-wrap: break-word;
   word-break: break-all;
+  overflow: hidden;
 }
 .output .previous {
   color: rgba(255, 255, 255, .75);
@@ -122,11 +123,17 @@ button.validate {
 .output .current {
   color: white;
   font-size: 2.5em;
-  /* text-align: right; */
-  /* width: 100%;
-  background: inherit;
-  outline: none;
-  border: none; */
-  /* background-color: transparent; */
+}
+.current.going-up {
+  animation: going-up 0.2s ease-in-out forwards;
+}
+
+@keyframes going-up {
+  from {
+    transform: translateY(70px);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
