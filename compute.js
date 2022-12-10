@@ -153,7 +153,6 @@ function CheckIfPossibleOperation(value) {
 /** @return {boolean} */
 function minLengthForOperation() {
   let splittedOperation = SplitCurrentOperation()
-  // Weirdly, splitting an expression ('5+') with '+' separator creates an array of length 2 ('5', '') :
   splittedOperation = splittedOperation.filter(element => element !== '')
   const minLengthForOperation = splittedOperation.length === 2
   if (!minLengthForOperation) {
@@ -259,7 +258,6 @@ function RemoveSingleElement(displayedContent) {
   if (displayedContent.length === 0) {
     DisableActionsButtons(true)
     DisableEqualBtn(true)
-    // DisableDotSeparator(true)
   } else {
     CheckActionsButtons(displayedContent[displayedContent.length - 1])
     CheckEqualsBtn()
