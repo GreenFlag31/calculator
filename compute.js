@@ -95,11 +95,11 @@ document.addEventListener("keyup", (e) => {
 function ProcessToResult(value) {
   if (RemovingElements(value)) return
 
-  if (resultAsked && onlyDigits.test(value) && CheckDotSeparator()) {
+  if (resultAsked && onlyDigits.test(value)) {
     display.textContent = ''
     DisableDotSeparator(true)
-    resultAsked = false
   }
+  resultAsked = false
   // a computation is possible and '=' pressed, just display results
   // do not display further operator if a division by 0 occured && operations chained
   if (CheckIfPossibleOperation(value) && value === '=' || divisionByZeroError) {
@@ -114,6 +114,7 @@ function ProcessToResult(value) {
   display.insertAdjacentText('beforeend', value)
   AnimateResultDisplay(display, 600)
   CheckEqualsBtn()
+  CheckDotSeparator()
 }
 
 
@@ -229,8 +230,7 @@ function RemovingElements(value) {
     if (resultAsked) DisableDotSeparator(true)
     else CheckDotSeparator()
 
-    const displayedContent = display.textContent
-    RemoveSingleElement(displayedContent)
+    RemoveSingleElement(display.textContent)
     return true
 
   } else if (value === 'AC') {
@@ -286,11 +286,16 @@ function CheckActionsButtons(value) {
  * @param {?string} value 
  */
 function CheckDotSeparator(value = '') {
+  if (display.textContent === '') {
+    DisableDotSeparator(true)
+    return
+  } 
+
   const wholeExpression = display.textContent + value
   const completeOperation = SplitCompleteOperation(wholeExpression)
 
   const checkOnLastOperand = completeOperation.at(-1)
-  if (checkOnLastOperand?.indexOf('.') !== -1) {
+  if (checkOnLastOperand.indexOf('.') !== -1) {
     DisableDotSeparator(true)
   } else {
     DisableDotSeparator(false)
