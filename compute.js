@@ -52,7 +52,6 @@ DisableDotSeparator(true)
 EnableStartingNegativeN()
 
 
-// starting with neg numbers 
 
 
 /** Mouse inputs */
