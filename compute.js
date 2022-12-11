@@ -40,6 +40,7 @@ const inputButtons = document.querySelectorAll('button')
 const calculator = document.querySelector('.calculator-grid')
 const exe = document.querySelector(".execute")
 const separator = document.querySelector(".separator")
+const minus = document.querySelector(".minus")
 const allowedChar = /^\d|=|÷|\*|-|\+|\.|DEL|AC/
 const onlyDigits = /\d/
 let divisionByZeroError = false
@@ -48,7 +49,10 @@ let hashmapOperators = {}
 DisableEqualBtn(true)
 DisableActionsButtons(true)
 DisableDotSeparator(true)
+EnableStartingNegativeN()
 
+
+// starting with neg numbers 
 
 
 /** Mouse inputs */
@@ -125,16 +129,16 @@ function ProcessToResult(value) {
 function CheckIfPossibleOperation(value) {
   if (!symbolsToOperations[value] && value !== '=') return false
   let result = ''
-
+  
   PopulatehashmapOperators(value)
   DisableActionsButtons(true)
   DisableDotSeparator(true)
-
+  
   if (value === '=') resultAsked = true
   else resultAsked = false
-  if (!minLengthForOperation()) return false
-
   const [firstOperand, lastOperand] = SplitCurrentOperation()
+  if (!firstOperand || !lastOperand) return false
+
   result = operate(hashmapOperators['operator'], +firstOperand, +lastOperand)
 
   if (CheckZeroDivision(result)) {
@@ -152,8 +156,7 @@ function CheckIfPossibleOperation(value) {
 
 /** @return {boolean} */
 function minLengthForOperation() {
-  let splittedOperation = SplitCurrentOperation()
-  splittedOperation = splittedOperation.filter(element => element !== '')
+  const splittedOperation = SplitCurrentOperation()
   const minLengthForOperation = splittedOperation.length === 2
   if (!minLengthForOperation) {
     return false
@@ -165,21 +168,45 @@ function minLengthForOperation() {
 
 /** @return {Array} */
 function SplitCurrentOperation() {
-  const splittedOperation = display.textContent.split(hashmapOperators['operator'])
+  let splittedOperation = display.textContent.split(hashmapOperators['operator'])
+
+  if (splittedOperation.length === 3) {
+    const startingNegative = StartingWithNegOperator(splittedOperation)
+    return startingNegative
+  }
+
+  splittedOperation = splittedOperation.filter(element => element !== '')
 
   return splittedOperation
+}
+
+/**
+ * Exception with starting negative number, subtraction
+ * @param {Array} splittedOperation 
+ * @return {Array}
+ */
+function StartingWithNegOperator(splittedOperation) {
+  return [hashmapOperators['operator'] + splittedOperation[1], 
+  splittedOperation[2]].filter(element => element !== '')
 }
 
 
 /**
  * This function stores the operator needed for computation.
- * @param {HTMLElement} button 
+ * @param {HTMLElement} value 
  * @return {boolean}
  */
-function PopulatehashmapOperators(button) {
+function PopulatehashmapOperators(value) {
+  if (value === '=') return
+
+  const startingNeg = display.textContent.substring(0, 1)
+  if (symbolsToOperations[startingNeg] && symbolsToOperations[startingNeg] !== value) {
+    hashmapOperators['operator'] = value
+    return
+  }
   if (hashmapOperators['operator']) return
 
-  hashmapOperators['operator'] = button
+  hashmapOperators['operator'] = value
 }
 
 /** @param {boolean} disable */
@@ -287,13 +314,13 @@ function CheckDotSeparator(value = '') {
   if (display.textContent === '') {
     DisableDotSeparator(true)
     return
-  } 
+  }
 
   const wholeExpression = display.textContent + value
   const completeOperation = SplitCompleteOperation(wholeExpression)
 
   const checkOnLastOperand = completeOperation.at(-1)
-  if (checkOnLastOperand.indexOf('.') !== -1) {
+  if (checkOnLastOperand?.indexOf('.') !== -1) {
     DisableDotSeparator(true)
   } else {
     DisableDotSeparator(false)
@@ -417,4 +444,10 @@ function DisableDotSeparator(disable) {
     separator.removeAttribute('disabled')
     separator.classList.add('enabled')
   }
+}
+
+/** At start, enable negative numbers */
+function EnableStartingNegativeN() {
+  minus.removeAttribute('disabled')
+  minus.classList.add('enabled')
 }
