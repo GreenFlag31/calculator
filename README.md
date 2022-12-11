@@ -7,5 +7,5 @@
 💻 Regex used to test</br>
 💻 JSDoc to document functions</br>
 💻 Functional programming, functions kept short for lisibility</br>
-💻 DRY principles applied</br>
+💻 DRY principle applied</br>
 
