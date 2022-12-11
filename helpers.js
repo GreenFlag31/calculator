@@ -1,156 +1,15 @@
-const mathOperations = {
-  add: (n1, n2) => n1 + n2,
-  subtract: (n1, n2) => n1 - n2,
-  multiply: (n1, n2) => n1 * n2,
-  divide: (n1, n2) => n1 / n2
-}
-const {add, subtract, multiply, divide} = mathOperations
-
-const symbolsToOperations = {
-  '+': add,
-  '-': subtract,
-  '*': multiply,
-  '÷': divide
-}
-
-const translateExpression = {
-  'Enter': '=',
-  'Backspace': 'DEL',
-  'Delete': 'DEL',
-  'Escape': 'AC',
-  '/': '÷',
-}
-
-/**
- * @param {string} operation 
- * @param {number} n1 
- * @param {number} n2 
- * @return {(n1: number, n2: number) => number}
- */
-function operate(operation, n1, n2) {
-
-  return symbolsToOperations[operation](n1, n2)
-
-}
+import { symbolsToOperations } from './CONSTANTS.js'
+import { inputButtons, onlyDigits } from './calculator.js'
 
 
-
-const display = document.querySelector('.current')
-const inputButtons = document.querySelectorAll('button')
 const calculator = document.querySelector('.calculator-grid')
+const display = document.querySelector('.current')
 const exe = document.querySelector(".execute")
 const separator = document.querySelector(".separator")
 const minus = document.querySelector(".minus")
-const allowedChar = /^\d|=|÷|\*|-|\+|\.|DEL|AC/
-const onlyDigits = /\d/
-let divisionByZeroError = false
 let resultAsked = false
 let hashmapOperators = {}
-DisableEqualBtn(true)
-DisableActionsButtons(true)
-DisableDotSeparator(true)
-EnableStartingNegativeN()
-
-
-
-
-/** Mouse inputs */
-inputButtons.forEach(button => {
-  // Disabled elements don't fire mouse events :/
-  button.addEventListener('click', () => {
-    
-    AddPressedBtnAnimation(button)
-    if (button.hasAttribute('disabled')) {
-      AddShakeAnimation()
-      return
-    }
-    const btnContent = button.textContent
-
-    ProcessToResult(btnContent)
-  })
-})
-
-
-/** Keyboard inputs */
-document.addEventListener("keyup", (e) => {
-  let expression = e.key
-  if (expression === 'F5') return
-
-  if (translateExpression[expression]) {
-    expression = translateExpression[expression]
-  } 
-  const correspondingbtn = FindCorrespondingButton(expression)
-  
-  if (allowedChar.test(expression) === false ||
-  correspondingbtn.hasAttribute('disabled')) {
-    AddShakeAnimation()
-    return
-  }
-  
-  ProcessToResult(expression)
-})
-
-
-/**
- * calls functions and event. display the result on calculator
- * @param {HTMLElement} value 
- */
-function ProcessToResult(value) {
-  if (RemovingElements(value)) return
-
-  if (resultAsked && onlyDigits.test(value)) {
-    display.textContent = ''
-    DisableDotSeparator(true)
-  }
-  resultAsked = false
-  // a computation is possible and '=' pressed, just display results
-  // do not display further operator if a division by 0 occured && operations chained
-  if (CheckIfPossibleOperation(value) && value === '=' || divisionByZeroError) {
-    DisableEqualBtn(true)
-    CheckLastDisplayedValue()
-    hashmapOperators = {}
-    return
-  }
-  
-  CheckActionsButtons(value)
-
-  display.insertAdjacentText('beforeend', value)
-  AnimateResultDisplay(display, 600)
-  CheckEqualsBtn()
-  CheckDotSeparator()
-}
-
-
-/**
- * @param {string} value 
- * @return {boolean}
- */
-function CheckIfPossibleOperation(value) {
-  if (!symbolsToOperations[value] && value !== '=') return false
-  let result = ''
-  
-  PopulatehashmapOperators(value)
-  DisableActionsButtons(true)
-  DisableDotSeparator(true)
-  
-  if (value === '=') resultAsked = true
-  else resultAsked = false
-  const [firstOperand, lastOperand] = SplitCurrentOperation()
-  if (!firstOperand || !lastOperand) return false
-
-  result = operate(hashmapOperators['operator'], +firstOperand, +lastOperand)
-
-  if (CheckZeroDivision(result)) {
-    return true
-  }
-
-  display.textContent = RoundResult(result)
-  display.classList.add("going-up")
-  CheckDotSeparator()
-  if (symbolsToOperations[value]) hashmapOperators['operator'] = value
-  return true
-}
-
+let divisionByZeroError = false
 
 
 /** @return {boolean} */
@@ -208,6 +67,12 @@ function PopulatehashmapOperators(value) {
   hashmapOperators['operator'] = value
 }
 
+
+function ResetHashmapOperators() {
+  hashmapOperators = {}
+}
+
+
 /** @param {boolean} disable */
 function DisableEqualBtn(disable) {
   if (disable) {
@@ -232,7 +97,7 @@ function AddPressedBtnAnimation(input) {
 
 /** @param {string} expression */
 function FindCorrespondingButton(expression) {
-  for (btn of Array.from(inputButtons)) {
+  for (const btn of Array.from(inputButtons)) {
     if (btn.textContent === expression) {
       AddPressedBtnAnimation(btn)
       return btn
@@ -244,32 +109,42 @@ function FindCorrespondingButton(expression) {
 /**
  * @param {string} button
  * @return {boolean}
- */
+*/
 function RemovingElements(value) {
   ResetContent()
   display.classList.remove('going-up')
-
+  
   
   if (value === 'DEL') {
     display.textContent = display.textContent.substring(0, display.textContent.length - 1)
     if (resultAsked) DisableDotSeparator(true)
     else CheckDotSeparator()
-
+    
     RemoveSingleElement(display.textContent)
     return true
-
+    
   } else if (value === 'AC') {
     display.textContent = ''
     DisableEqualBtn(true)
     DisableActionsButtons(true)
     DisableDotSeparator(true)
+    EnableStartingNegativeN()
     hashmapOperators = {}
     resultAsked = false
     return true
   }
-
+  
   CheckDotSeparator(value)
   return false
+}
+
+/** @param {boolean} status */
+function ChangeStatusResultAsked(status) {
+  if (status) {
+    resultAsked = true
+  } else {
+    resultAsked = false
+  }
 }
 
 
@@ -280,15 +155,16 @@ function RemoveSingleElement(displayedContent) {
     displayedContent = ''
     resultAsked = false
   }  
-
+  
   if (displayedContent.length === 0) {
     DisableActionsButtons(true)
     DisableEqualBtn(true)
+    EnableStartingNegativeN()
   } else {
     CheckActionsButtons(displayedContent[displayedContent.length - 1])
     CheckEqualsBtn()
   }
-
+  
   if (display.textContent.indexOf(hashmapOperators['operator']) === -1) {
     hashmapOperators = {}
   }
@@ -308,16 +184,16 @@ function CheckActionsButtons(value) {
 /**
  * Solely one check, if last operand in {Array} contains a '.', disable button.
  * @param {?string} value 
- */
+*/
 function CheckDotSeparator(value = '') {
   if (display.textContent === '') {
     DisableDotSeparator(true)
     return
   }
-
+  
   const wholeExpression = display.textContent + value
   const completeOperation = SplitCompleteOperation(wholeExpression)
-
+  
   const checkOnLastOperand = completeOperation.at(-1)
   if (checkOnLastOperand?.indexOf('.') !== -1) {
     DisableDotSeparator(true)
@@ -331,23 +207,23 @@ function CheckDotSeparator(value = '') {
  * This function returns operand(s), if operands > 1 an operator has been used.
  * @param {string} wholeExpression 
  * @return {Array}
- */
+*/
 function SplitCompleteOperation(wholeExpression) {
   let splittedOperation = wholeExpression.split(hashmapOperators['operator'])
   splittedOperation = splittedOperation.filter(element => element !== '')
-
+  
   return splittedOperation
 }
- 
+
 /**
  * @param {string} value 
  * @return {boolean}
- */
+*/
 function RegexTestOnlyDigits(value) {
   if (onlyDigits.test(value)) {
     return true
   }
-
+  
   return false
 }
 
@@ -370,7 +246,7 @@ function CheckEqualsBtn() {
 /**
  * @param {number} result 
  * @return {boolean}
- */
+*/
 function CheckZeroDivision(result) {
   if (result === Infinity) {
     display.textContent = 'Division by zero error'
@@ -387,7 +263,7 @@ function CheckZeroDivision(result) {
 
 /**
  * @param {HTMLDivElement} element 
- */
+*/
 function AnimateResultDisplay(element, duration) {
   const keyframes = [{ opacity: 0 }, { opacity: 1 }]
   const options = {  
@@ -395,27 +271,27 @@ function AnimateResultDisplay(element, duration) {
     easing: 'ease-out',
     fill: 'forwards'
   }
-
+  
   element.animate(keyframes, options)
 }
 
 
 /**
  * Reset back to normal appearance. Last computation introduced an error
- */
+*/
 function ResetContent() {
   if (divisionByZeroError) {
     display.style.color = 'white'
     display.textContent = ''
   }
-
+  
   divisionByZeroError = false
 }
 
 /**
  * @param {number} result 
  * @return {number}
- */
+*/
 function RoundResult(result) {
   return Math.round(result * 100) / 100
 }
@@ -450,3 +326,5 @@ function EnableStartingNegativeN() {
   minus.removeAttribute('disabled')
   minus.classList.add('enabled')
 }
+
+export { PopulatehashmapOperators, DisableEqualBtn, AddShakeAnimation, FindCorrespondingButton, RemovingElements, CheckActionsButtons, CheckDotSeparator, SplitCurrentOperation, CheckLastDisplayedValue, CheckEqualsBtn, CheckZeroDivision, AddPressedBtnAnimation, AnimateResultDisplay, RoundResult, DisableActionsButtons, DisableDotSeparator, EnableStartingNegativeN, divisionByZeroError, hashmapOperators, display, ResetHashmapOperators, ChangeStatusResultAsked, resultAsked } 
