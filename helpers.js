@@ -4,12 +4,15 @@ import { inputButtons, onlyDigits } from './calculator.js'
 
 const calculator = document.querySelector('.calculator-grid')
 const display = document.querySelector('.current')
-const exe = document.querySelector(".execute")
-const separator = document.querySelector(".separator")
-const minus = document.querySelector(".minus")
+const exe = document.querySelector('.execute')
+const separator = document.querySelector('.separator')
+const minus = document.querySelector('.minus')
+const zero = document.querySelector('.zero')
 let resultAsked = false
 let hashmapOperators = {}
 let divisionByZeroError = false
+
+
 
 
 /** @return {boolean} */
@@ -73,6 +76,8 @@ function ResetHashmapOperators() {
 }
 
 
+
+
 /** @param {boolean} disable */
 function DisableEqualBtn(disable) {
   if (disable) {
@@ -105,6 +110,33 @@ function FindCorrespondingButton(expression) {
   }
 }
 
+
+/** @param {string} value */
+function CheckZeroIsAlreadyPresent(value) {
+  let removing = false
+  if (value === 'DEL' || value === 'AC') removing = true
+  
+  if (display.textContent.replace('-', '') === '' && value.replace('-', '') === '0') {
+    DisableZero(true)
+  } else if (SplitCompleteOperation(display.textContent + value)[1] === '0') {
+    DisableZero(true)
+  } else if (removing && display.textContent.at(-1) === '.') {
+    DisableZero(true)
+  } else {
+    DisableZero(false)
+  }
+}
+
+/** @param {boolean} disable  */
+function DisableZero(disable) {
+  if (disable) {
+    zero.setAttribute('disabled', '')
+    zero.classList.remove('enabled')
+  } else {
+    zero.removeAttribute('disabled')
+    zero.classList.add('enabled')
+  }
+}
 
 /**
  * @param {string} button
@@ -327,4 +359,4 @@ function EnableStartingNegativeN() {
   minus.classList.add('enabled')
 }
 
-export { PopulatehashmapOperators, DisableEqualBtn, AddShakeAnimation, FindCorrespondingButton, RemovingElements, CheckActionsButtons, CheckDotSeparator, SplitCurrentOperation, CheckLastDisplayedValue, CheckEqualsBtn, CheckZeroDivision, AddPressedBtnAnimation, AnimateResultDisplay, RoundResult, DisableActionsButtons, DisableDotSeparator, EnableStartingNegativeN, divisionByZeroError, hashmapOperators, display, ResetHashmapOperators, ChangeStatusResultAsked, resultAsked } 
+export { PopulatehashmapOperators, DisableEqualBtn, AddShakeAnimation, FindCorrespondingButton, RemovingElements, CheckActionsButtons, CheckDotSeparator, SplitCurrentOperation, CheckLastDisplayedValue, CheckEqualsBtn, CheckZeroDivision, AddPressedBtnAnimation, AnimateResultDisplay, RoundResult, DisableActionsButtons, DisableDotSeparator, EnableStartingNegativeN, divisionByZeroError, hashmapOperators, display, ResetHashmapOperators, ChangeStatusResultAsked, resultAsked, CheckZeroIsAlreadyPresent } 

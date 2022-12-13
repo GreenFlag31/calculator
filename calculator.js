@@ -1,5 +1,5 @@
 import { symbolsToOperations, translateExpression } from './CONSTANTS.js'
-import { PopulatehashmapOperators, DisableEqualBtn, AddShakeAnimation, FindCorrespondingButton, RemovingElements, CheckActionsButtons, CheckDotSeparator,  CheckLastDisplayedValue, SplitCurrentOperation, CheckEqualsBtn, CheckZeroDivision, AddPressedBtnAnimation, AnimateResultDisplay, RoundResult, DisableActionsButtons, DisableDotSeparator, EnableStartingNegativeN, divisionByZeroError, hashmapOperators, display, ResetHashmapOperators, ChangeStatusResultAsked, resultAsked } from './helpers.js'
+import { PopulatehashmapOperators, DisableEqualBtn, AddShakeAnimation, FindCorrespondingButton, RemovingElements, CheckActionsButtons, CheckDotSeparator,  CheckLastDisplayedValue, SplitCurrentOperation, CheckEqualsBtn, CheckZeroDivision, AddPressedBtnAnimation, AnimateResultDisplay, RoundResult, DisableActionsButtons, DisableDotSeparator, EnableStartingNegativeN, divisionByZeroError, hashmapOperators, display, ResetHashmapOperators, ChangeStatusResultAsked, resultAsked, CheckZeroIsAlreadyPresent } from './helpers.js'
 
 
 
@@ -50,6 +50,7 @@ document.addEventListener("keyup", (e) => {
   if (translateExpression[expression]) {
     expression = translateExpression[expression]
   } 
+
   const correspondingbtn = FindCorrespondingButton(expression)
   
   if (allowedChar.test(expression) === false ||
@@ -67,6 +68,7 @@ document.addEventListener("keyup", (e) => {
  * @param {HTMLElement} value 
  */
 function ProcessToResult(value) {
+  CheckZeroIsAlreadyPresent(value)
   if (RemovingElements(value)) return
 
   if (resultAsked && onlyDigits.test(value)) {
