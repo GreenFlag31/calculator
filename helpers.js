@@ -70,13 +70,9 @@ function PopulatehashmapOperators(value) {
   hashmapOperators['operator'] = value
 }
 
-
 function ResetHashmapOperators() {
   hashmapOperators = {}
 }
-
-
-
 
 /** @param {boolean} disable */
 function DisableEqualBtn(disable) {
@@ -94,10 +90,16 @@ function AddShakeAnimation() {
   setTimeout(() => calculator.classList.remove('shake'), 1000)
 }
 
-/** @param {HTMLButtonElement} input */
+/** 
+ * Removing 'enabled' class to avoid blinking effect
+ * @param {HTMLButtonElement} input
+ *  */
 function AddPressedBtnAnimation(input) {
   input.classList.add('validate')
-  setTimeout(() => input.classList.remove('validate'), 300)
+  setTimeout(() => {
+    input.classList.remove('validate')
+    input.classList.remove('enabled')
+  }, 300)
 }
 
 /** @param {string} expression */
@@ -109,7 +111,6 @@ function FindCorrespondingButton(expression) {
     }
   }
 }
-
 
 /** @param {string} value */
 function CheckZeroIsAlreadyPresent(value) {
@@ -127,12 +128,14 @@ function CheckZeroIsAlreadyPresent(value) {
   }
 }
 
-/** @param {boolean} disable  */
+/** 
+ * Making sure the HTMLButtonElement is disabled before adding 'enabled' class to remove blinking effect.
+ * @param {boolean} disable  */
 function DisableZero(disable) {
   if (disable) {
     zero.setAttribute('disabled', '')
     zero.classList.remove('enabled')
-  } else {
+  } else if (zero.hasAttribute('disabled')) {
     zero.removeAttribute('disabled')
     zero.classList.add('enabled')
   }
@@ -325,7 +328,7 @@ function ResetContent() {
  * @return {number}
 */
 function RoundResult(result) {
-  return Math.round(result * 100) / 100
+  return Math.round(result * 10000) / 10000
 }
 
 /** @param {boolean} disable */

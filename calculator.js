@@ -28,6 +28,7 @@ EnableStartingNegativeN()
 /** Mouse inputs */
 inputButtons.forEach(button => {
   // Disabled elements don't fire mouse events :/
+  // A solution would be to wrap them in a <div>
   button.addEventListener('click', () => {
     
     AddPressedBtnAnimation(button)

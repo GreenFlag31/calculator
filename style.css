@@ -35,10 +35,11 @@ body {
   background-color: rgba(255, 255, 255, .9);
 }
 button:disabled {
-  animation: darken 0.4s ease-out forwards;
+  animation: darken 0.3s ease-out forwards;
 }
 button.enabled {
-  animation: lighten 0.4s ease-out forwards;
+  animation: lighten 1s ease-out forwards;
+
 }
 
 @keyframes darken {
